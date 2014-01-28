@@ -35,6 +35,41 @@ func (a *BasicAtom) Children() []Atom {
 
 type FileTypeAtom struct {
 	*BasicAtom
-	MajorBrand   uint32 `qtff:"0"`
-	MinorVersion uint32 `qtff:"1"`
+	MajorBrand   uint32 `qtff:" "`
+	MinorVersion uint32 `qtff:" "`
+}
+
+type MovieAtom struct {
+	*BasicAtom
+}
+
+func (a *MovieAtom) Leaf() bool {
+	return false
+}
+
+type MovieHeaderAtom struct {
+	*BasicAtom
+	Version           byte   `qtff:" "`
+	Flags             []byte `qtff:"3"`
+	CreationTime      uint32 `qtff:" "`
+	ModificationTime  uint32 `qtff:" "`
+	TimeScale         uint32 `qtff:" "`
+	Duration          uint32 `qtff:" "`
+	PreferredRate     uint32 `qtff:" "` // FIXME: this should be 32-bit fixed point
+	PreferredVolue    uint16 `qtff:" "` // FIXME: this should be 16-bit fixed point
+	Reserved          []byte `qtff:"10"`
+	PreviewTime       uint32 `qtff:" "`
+	PosterTime        uint32 `qtff:" "`
+	SelectionTime     uint32 `qtff:" "`
+	SelectionDuration uint32 `qtff:" "`
+	CurrentTime       uint32 `qtff:" "`
+	NextTrackId       uint32 `qtff:" "`
+}
+
+type TrackAtom struct {
+	*BasicAtom
+}
+
+func (a *TrackAtom) Leaf() bool {
+	return false
 }

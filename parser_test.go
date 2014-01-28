@@ -1,9 +1,9 @@
 package qtff
 
 import (
+	"fmt"
 	"os"
 	"testing"
-	// "fmt"
 )
 
 func TestParser(t *testing.T) {
@@ -14,8 +14,30 @@ func TestParser(t *testing.T) {
 	defer file.Close()
 
 	if atoms, err := Parse(file); err == nil {
+		printAtoms(atoms)
 		t.Errorf("%v", atoms)
 	} else {
+		printAtoms(atoms)
 		t.Errorf("Error parsing: %v", err)
+	}
+}
+
+func printAtoms(as []Atom) {
+	for _, a := range as {
+		printAtom(a, 0)
+	}
+}
+
+func printAtom(a Atom, depth int) {
+	padding := ""
+	for i := 0; i < depth; i++ {
+		padding = padding + "    "
+	}
+	fmt.Println(padding, a, a.Length(), string(a.Type()))
+	children := a.Children()
+	if children != nil {
+		for _, c := range children {
+			printAtom(c, depth+1)
+		}
 	}
 }

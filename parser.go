@@ -7,7 +7,10 @@ import (
 	"io/ioutil"
 	"math"
 	"reflect"
+	"strconv"
 )
+
+var _ = fmt.Println
 
 func Parse(rdr io.Reader) ([]Atom, error) {
 	atoms := make([]Atom, 0, 5)
@@ -15,9 +18,11 @@ func Parse(rdr io.Reader) ([]Atom, error) {
 	var a Atom
 	for err == nil {
 		if a, err = parseNext(rdr); err == nil {
-			fmt.Println(a, a.Length(), string(a.Type()))
 			atoms = append(atoms, a)
 		}
+	}
+	if err == io.EOF {
+		err = nil
 	}
 	return atoms, err
 }
@@ -45,7 +50,7 @@ func parseNext(rdr io.Reader) (Atom, error) {
 		// Handle the remaining data.  An atom either has
 		// child atoms or data, never both
 		if !atom.Leaf() {
-			if c, err := Parse(rdr); err == nil {
+			if c, err := Parse(rdr); err == nil || err == io.EOF {
 				a.ChildAtoms = c
 			}
 		}
@@ -99,6 +104,12 @@ func upgradeType(b *BasicAtom) Atom {
 	switch string(b.Type()) {
 	case "ftyp":
 		return &FileTypeAtom{BasicAtom: b}
+	case "moov":
+		return &MovieAtom{BasicAtom: b}
+	case "mvhd":
+		return &MovieHeaderAtom{BasicAtom: b}
+	case "trak":
+		return &TrackAtom{BasicAtom: b}
 	default:
 		return b
 	}
@@ -119,12 +130,31 @@ func parseSpecialHeaders(rdr io.Reader, atom Atom) error {
 				readBlock := make([]byte, 16)
 				// fmt.Println(field)
 				switch field.Kind() {
+				case reflect.Slice:
+					l, _ := strconv.Atoi(tag)
+					readSlice := make([]byte, l)
+					if _, err := rdr.Read(readSlice); err == nil {
+						field.SetBytes(readSlice)
+					} else {
+						return err
+					}
+				case reflect.Uint8:
+					if _, err := rdr.Read(readBlock[0:1]); err == nil {
+						field.Set(reflect.ValueOf(readBlock[0:1][0]))
+					} else {
+						return err
+					}
+				case reflect.Uint16:
+					if _, err := rdr.Read(readBlock[0:2]); err == nil {
+						field.Set(reflect.ValueOf(binary.BigEndian.Uint16(readBlock[0:2])))
+					} else {
+						return err
+					}
 				case reflect.Uint32:
 					if _, err := rdr.Read(readBlock[0:4]); err == nil {
 						field.Set(reflect.ValueOf(binary.BigEndian.Uint32(readBlock[0:4])))
-						// fmt.Println(atom, field)
 					} else {
-						// return err
+						return err
 					}
 				}
 			}
