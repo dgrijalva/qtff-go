@@ -36,7 +36,7 @@ func printAtom(a Atom, depth int) {
 	if _, ok := a.(*BasicAtom); ok {
 		fmt.Println(padding, string(a.Type()), a.Length(), "<Basic>")
 	} else {
-		fmt.Println(padding, string(a.Type()), a.Length(), a)
+		fmt.Println(padding, string(a.Type()), a.Length(), fmt.Sprintf("%T", a), a)
 	}
 	children := a.Children()
 	if children != nil {

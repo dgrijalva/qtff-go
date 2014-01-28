@@ -1,8 +1,10 @@
 package qtff
 
 import (
+	"bytes"
 	"encoding/binary"
 	"io"
+	"io/ioutil"
 )
 
 type Atom interface {
@@ -184,4 +186,67 @@ type SoundMediaHeaderAtom struct {
 	Flags    []byte `qtff:"3"`
 	Balance  uint16 `qtff:" "`
 	Reserved uint16 `qtff:" "`
+}
+
+type SampleTableAtom struct {
+	*BasicAtom
+}
+
+func (a *SampleTableAtom) Leaf() bool {
+	return false
+}
+
+// They reall call it that!
+type DataInformationAtom struct {
+	*BasicAtom
+}
+
+func (a *DataInformationAtom) Leaf() bool {
+	return false
+}
+
+type DataReferenceAtom struct {
+	*BasicAtom
+	Version    byte   `qtff:" "`
+	Flags      []byte `qtff:"3"`
+	NumEntries uint32 `qtff:" "`
+}
+
+func (a *DataReferenceAtom) Leaf() bool {
+	return false
+}
+
+type DataReferenceAliasAtom struct {
+	*BasicAtom
+	Version byte   `qtff:" "`
+	Flags   []byte `qtff:"3"`
+	Data    []byte
+}
+
+func (a *DataReferenceAliasAtom) parseRemainingData(rdr io.Reader) error {
+	var err error
+	a.Data, err = ioutil.ReadAll(rdr)
+	return err
+}
+
+type DataReferenceURLAtom struct {
+	*BasicAtom
+	Version byte   `qtff:" "`
+	Flags   []byte `qtff:"3"`
+	Data    []byte
+	URL     string
+}
+
+func (a *DataReferenceURLAtom) parseRemainingData(rdr io.Reader) error {
+	var err error
+	a.Data, err = ioutil.ReadAll(rdr)
+	if err == nil {
+		var index = bytes.Index(a.Data, []byte{0})
+		if index > 0 {
+			a.URL = string(a.Data[0:index])
+		} else {
+			a.URL = string(a.Data)
+		}
+	}
+	return err
 }

@@ -131,6 +131,16 @@ func upgradeType(b *BasicAtom) Atom {
 		return &SoundMediaHeaderAtom{BasicAtom: b}
 	case "vmhd":
 		return &VideoMediaHeaderAtom{BasicAtom: b}
+	case "stbl":
+		return &SampleTableAtom{BasicAtom: b}
+	case "dinf":
+		return &DataInformationAtom{BasicAtom: b}
+	case "dref":
+		return &DataReferenceAtom{BasicAtom: b}
+	case "alis":
+		return &DataReferenceAliasAtom{BasicAtom: b}
+	case "url ":
+		return &DataReferenceURLAtom{BasicAtom: b}
 	default:
 		return b
 	}
