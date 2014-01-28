@@ -127,6 +127,10 @@ func upgradeType(b *BasicAtom) Atom {
 		return &MediaHeaderAtom{BasicAtom: b}
 	case "minf":
 		return &MediaInfoAtom{BasicAtom: b}
+	case "smhd":
+		return &SoundMediaHeaderAtom{BasicAtom: b}
+	case "vmhd":
+		return &VideoMediaHeaderAtom{BasicAtom: b}
 	default:
 		return b
 	}
@@ -157,7 +161,7 @@ func parseSpecialHeaders(rdr io.Reader, atom Atom) error {
 					}
 				case reflect.Uint8:
 					if _, err := rdr.Read(readBlock[0:1]); err == nil {
-						field.Set(reflect.ValueOf(readBlock[0:1][0]))
+						field.Set(reflect.ValueOf(readBlock[0]))
 					} else {
 						return err
 					}
@@ -173,9 +177,36 @@ func parseSpecialHeaders(rdr io.Reader, atom Atom) error {
 					} else {
 						return err
 					}
+				case reflect.Float64:
+					// "fixed point"
+					l, _ := strconv.Atoi(tag)
+					if _, err := rdr.Read(readBlock[0:l]); err == nil {
+						switch l {
+						// 16-bit fixed width
+						case 2:
+							field.SetFloat(parse16BitFixed(readBlock[0:2]))
+						// 32-bit fixed width
+						case 4:
+							field.SetFloat(parse32BitFixed(readBlock[0:4]))
+						}
+					} else {
+						return err
+					}
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func parse16BitFixed(b []byte) float64 {
+	var val float64 = float64(b[0])
+	val += float64(b[1]) / float64(math.MaxUint8)
+	return val
+}
+
+func parse32BitFixed(b []byte) float64 {
+	var val float64 = float64(binary.BigEndian.Uint16(b[0:2]))
+	val += float64(binary.BigEndian.Uint16(b[2:4])) / float64(math.MaxUint16)
+	return val
 }

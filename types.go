@@ -59,21 +59,21 @@ func (a *MovieAtom) Leaf() bool {
 
 type MovieHeaderAtom struct {
 	*BasicAtom
-	Version           byte   `qtff:" "`
-	Flags             []byte `qtff:"3"`
-	CreationTime      uint32 `qtff:" "`
-	ModificationTime  uint32 `qtff:" "`
-	TimeScale         uint32 `qtff:" "`
-	Duration          uint32 `qtff:" "`
-	PreferredRate     uint32 `qtff:" "` // FIXME: this should be 32-bit fixed point
-	PreferredVolume   uint16 `qtff:" "` // FIXME: this should be 16-bit fixed point
-	Reserved          []byte `qtff:"10"`
-	PreviewTime       uint32 `qtff:" "`
-	PosterTime        uint32 `qtff:" "`
-	SelectionTime     uint32 `qtff:" "`
-	SelectionDuration uint32 `qtff:" "`
-	CurrentTime       uint32 `qtff:" "`
-	NextTrackId       uint32 `qtff:" "`
+	Version           byte    `qtff:" "`
+	Flags             []byte  `qtff:"3"`
+	CreationTime      uint32  `qtff:" "`
+	ModificationTime  uint32  `qtff:" "`
+	TimeScale         uint32  `qtff:" "`
+	Duration          uint32  `qtff:" "`
+	PreferredRate     float64 `qtff:"4"`
+	PreferredVolume   float64 `qtff:"2"`
+	Reserved          []byte  `qtff:"10"`
+	PreviewTime       uint32  `qtff:" "`
+	PosterTime        uint32  `qtff:" "`
+	SelectionTime     uint32  `qtff:" "`
+	SelectionDuration uint32  `qtff:" "`
+	CurrentTime       uint32  `qtff:" "`
+	NextTrackId       uint32  `qtff:" "`
 }
 
 type TrackAtom struct {
@@ -86,21 +86,21 @@ func (a *TrackAtom) Leaf() bool {
 
 type TrackHeaderAtom struct {
 	*BasicAtom
-	Version          byte   `qtff:" "`
-	Flags            []byte `qtff:"3"`
-	CreationTime     uint32 `qtff:" "`
-	ModificationTime uint32 `qtff:" "`
-	TrackId          uint32 `qtff:" "`
-	Reserved         []byte `qtff:"4"`
-	Duration         uint32 `qtff:" "`
-	Reserved2        []byte `qtff:"8"`
-	Layer            uint16 `qtff:" "`
-	AlternateGroup   uint16 `qtff:" "`
-	Volume           uint16 `qtff:" "` // FIXME: this should be 16-bit fixed point
-	Reserved3        []byte `qtff:"2"`
-	MatrixStructure  []byte `qtff:"36"`
-	TrackWidth       uint32 `qtff:" "` // FIXME: this should be 32-bit fixed point
-	TrackHeight      uint32 `qtff:" "` // FIXME: this should be 32-bit fixed point
+	Version          byte    `qtff:" "`
+	Flags            []byte  `qtff:"3"`
+	CreationTime     uint32  `qtff:" "`
+	ModificationTime uint32  `qtff:" "`
+	TrackId          uint32  `qtff:" "`
+	Reserved         []byte  `qtff:"4"`
+	Duration         uint32  `qtff:" "`
+	Reserved2        []byte  `qtff:"8"`
+	Layer            uint16  `qtff:" "`
+	AlternateGroup   uint16  `qtff:" "`
+	Volume           float64 `qtff:"2"`
+	Reserved3        []byte  `qtff:"2"`
+	MatrixStructure  []byte  `qtff:"36"`
+	TrackWidth       float64 `qtff:"4"`
+	TrackHeight      float64 `qtff:"4"`
 }
 
 type EditAtom struct {
@@ -122,7 +122,7 @@ type EditListAtom struct {
 type EditListEdit struct {
 	TrackDuration uint32
 	MediaTime     int32
-	MediaRate     uint32 // FIXME: this should be 32-bit fixed point
+	MediaRate     float64 // 32-bit fixed point
 }
 
 func (e *EditListAtom) parseRemainingData(rdr io.Reader) error {
@@ -133,7 +133,7 @@ func (e *EditListAtom) parseRemainingData(rdr io.Reader) error {
 			e.Edits[i] = EditListEdit{
 				binary.BigEndian.Uint32(readBuffer[0:4]),
 				int32(binary.BigEndian.Uint32(readBuffer[4:8])),
-				binary.BigEndian.Uint32(readBuffer[8:12]),
+				parse32BitFixed(readBuffer[8:12]),
 			}
 		} else {
 			return err
@@ -168,4 +168,20 @@ type MediaInfoAtom struct {
 
 func (a *MediaInfoAtom) Leaf() bool {
 	return false
+}
+
+type VideoMediaHeaderAtom struct {
+	*BasicAtom
+	Version      byte   `qtff:" "`
+	Flags        []byte `qtff:"3"`
+	GraphicsMode uint16 `qtff:" "`
+	Opcolor      []byte `qtff:"6"`
+}
+
+type SoundMediaHeaderAtom struct {
+	*BasicAtom
+	Version  byte   `qtff:" "`
+	Flags    []byte `qtff:"3"`
+	Balance  uint16 `qtff:" "`
+	Reserved uint16 `qtff:" "`
 }
