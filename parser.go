@@ -55,6 +55,11 @@ func parseNext(rdr io.Reader) (Atom, error) {
 			}
 		}
 
+		// Does this atom know what to do with the rest of its data?
+		if da, ok := atom.(dataAtom); ok {
+			err = da.parseRemainingData(rdr)
+		}
+
 		// Discard remaining data
 		// FIXME: we need this data eventually
 		io.Copy(ioutil.Discard, rdr)
@@ -110,6 +115,18 @@ func upgradeType(b *BasicAtom) Atom {
 		return &MovieHeaderAtom{BasicAtom: b}
 	case "trak":
 		return &TrackAtom{BasicAtom: b}
+	case "tkhd":
+		return &TrackHeaderAtom{BasicAtom: b}
+	case "edts":
+		return &EditAtom{BasicAtom: b}
+	case "elst":
+		return &EditListAtom{BasicAtom: b}
+	case "mdia":
+		return &MediaAtom{BasicAtom: b}
+	case "mdhd":
+		return &MediaHeaderAtom{BasicAtom: b}
+	case "minf":
+		return &MediaInfoAtom{BasicAtom: b}
 	default:
 		return b
 	}

@@ -33,7 +33,7 @@ func printAtom(a Atom, depth int) {
 	for i := 0; i < depth; i++ {
 		padding = padding + "    "
 	}
-	fmt.Println(padding, a, a.Length(), string(a.Type()))
+	fmt.Println(padding, string(a.Type()), a.Length(), a)
 	children := a.Children()
 	if children != nil {
 		for _, c := range children {
