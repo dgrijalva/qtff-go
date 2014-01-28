@@ -1,15 +1,15 @@
 package qtff
 
 import (
-	"io"
-	"io/ioutil"
 	"encoding/binary"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"math"
 	"reflect"
 )
 
-func Parse(rdr io.Reader)([]Atom, error) {
+func Parse(rdr io.Reader) ([]Atom, error) {
 	atoms := make([]Atom, 0, 5)
 	var err error
 	var a Atom
@@ -22,7 +22,7 @@ func Parse(rdr io.Reader)([]Atom, error) {
 	return atoms, err
 }
 
-func parseNext(rdr io.Reader)(Atom, error) {
+func parseNext(rdr io.Reader) (Atom, error) {
 	if a, i, err := readAtomHeader(rdr); err == nil {
 		// Limit the rest of the reads
 		if a.Length() == 0 {
@@ -30,7 +30,7 @@ func parseNext(rdr io.Reader)(Atom, error) {
 		} else {
 			rdr = &io.LimitedReader{rdr, int64(a.Length() - uint64(i))}
 		}
-		
+
 		// Find out if atom is of a known type
 		atom := upgradeType(a)
 
@@ -49,18 +49,18 @@ func parseNext(rdr io.Reader)(Atom, error) {
 				a.ChildAtoms = c
 			}
 		}
-		
+
 		// Discard remaining data
 		// FIXME: we need this data eventually
 		io.Copy(ioutil.Discard, rdr)
-		
+
 		return atom, err
 	} else {
 		return nil, err
 	}
 }
 
-func readAtomHeader(rdr io.Reader)(atom *BasicAtom, bytesRead int, err error){
+func readAtomHeader(rdr io.Reader) (atom *BasicAtom, bytesRead int, err error) {
 	atom = &BasicAtom{}
 	atom.typ = make([]byte, 4)
 	var sizeBlock = make([]byte, 8)
@@ -91,12 +91,12 @@ func readAtomHeader(rdr io.Reader)(atom *BasicAtom, bytesRead int, err error){
 		}
 		bytesRead += 8
 	}
-	
+
 	return
 }
 
-func upgradeType(b *BasicAtom)Atom {
-	switch(string(b.Type())){
+func upgradeType(b *BasicAtom) Atom {
+	switch string(b.Type()) {
 	case "ftyp":
 		return &FileTypeAtom{BasicAtom: b}
 	default:
@@ -104,7 +104,7 @@ func upgradeType(b *BasicAtom)Atom {
 	}
 }
 
-func parseSpecialHeaders(rdr io.Reader, atom Atom)error {
+func parseSpecialHeaders(rdr io.Reader, atom Atom) error {
 	value := reflect.ValueOf(atom)
 	writeValue := value.Elem()
 	if value.Kind() == reflect.Ptr {
